@@ -23,35 +23,79 @@ The Digital Plan Management System is a comprehensive web application designed f
 
 ## Screenshots
 
-Screenshots of the main interfaces are available in the `images` directory:
+The system includes several key interfaces documented through screenshots in the `images` directory:
 
 ### Main Application Views
 
-- **`PlanosListPage.png`**: Main dashboard showing all digitized plans in grid and list view (component: `PlanosListPage`)
-- **`PlanosPage-delimitados.png`**: Interactive vector drawing interface for defining plan boundaries and lots (component: `PlanosPage`)
+- **`PlanosListPage.png`**: Main dashboard showing all digitized plans in both grid and list view formats (component: `PlanosListPage`)
+  - Features plan thumbnails, creation dates, lot statistics
+  - Toggle between grid and list views
+  - Quick access buttons for viewing and editing plans
+  
+- **`PlanosPage-delimitados.png`**: Interactive vector drawing interface showing the digitization process (component: `PlanosPage`)
+  - Displays the uploaded plan image with vector boundaries drawn over it
+  - Shows the drawing tools panel for creating borders and sublots
+  - Demonstrates the vector editing capabilities with precise vertex manipulation
+
 - **`PlanoDigitalPageNew1.png`**: 3D visualization of digitized plans with interactive lot management (component: `PlanoDigitalPageNew`)
-- **`PlanoFinalizadoPage.png`**: Finalized plan view with detailed lot statistics and management options (component: `PlanoFinalizadoPage`)
+  - Shows elevated lot rendering with 3D effects and pastel colors
+  - Interactive hover effects revealing lot information
+  - Side panel for editing lot properties (price, status, area, description)
+  - Demonstrates the final digitized product without background images
 
-### User Interface Features
+- **`PlanoFinalizadoPage.png`**: Comprehensive plan overview with detailed statistics and management (component: `PlanoFinalizadoPage`)
+  - Statistical dashboard with lot counts by status
+  - Detailed lot information table with editing capabilities
+  - Export and management options
+  - Complete lot lifecycle management interface
 
-Each screenshot demonstrates key functionality:
+### Key Interface Features Demonstrated
 
-- **Plan Upload Interface**: Drag-and-drop file upload with progress indicators
-- **Vector Editing Tools**: Interactive drawing tools for boundaries and lot definition
-- **3D Plan Visualization**: Elevated lot rendering with hover effects and property panels
-- **Lot Management Dashboard**: Comprehensive statistics and property editing interfaces
+The screenshots showcase the complete workflow:
+
+1. **Plan Upload & Processing**: 
+   - Drag-and-drop interface for image/PDF upload
+   - Progress indicators during processing
+   - Automatic vector extraction preview
+
+2. **Interactive Vector Editing**:
+   - Real-time drawing tools (line, polygon, vertex editing)
+   - Precise vertex manipulation with snap-to functionality
+   - Grid overlay for accurate positioning
+   - Multiple tool modes (select, draw, delete, connect)
+
+3. **3D Plan Visualization**:
+   - Elevated lot rendering with smooth shadows
+   - Color-coded lot status (available: green, reserved: yellow, sold: red)
+   - Interactive hover effects with information tooltips
+   - Zoom and pan controls for detailed viewing
+
+4. **Lot Management Dashboard**:
+   - Comprehensive statistics (total lots, area, value)
+   - Individual lot property editing
+   - Status management workflow
+   - Export capabilities for various formats
+
+### Technical Implementation Screenshots
+
+The images demonstrate several advanced features:
+
 - **Responsive Design**: Mobile-friendly layouts across all components
+- **Modern UI Components**: Tailwind CSS styling with gradient backgrounds
+- **Interactive Elements**: Hover states, transitions, and smooth animations
+- **Data Visualization**: Color-coded status indicators and statistical displays
+- **Canvas Integration**: HTML5 Canvas for vector manipulation and rendering
 
-### Interface Components
+### User Workflow Documentation
 
-The screenshots showcase various UI components including:
-- Modern card-based layouts with Tailwind CSS styling
-- Interactive canvas elements for plan editing
-- Side panels for property management
-- Statistical dashboards with color-coded status indicators
-- Navigation breadcrumbs and action buttons
+Each screenshot represents a stage in the complete digitization workflow:
 
-Additional screenshots correspond to their respective React components and demonstrate the complete user workflow from plan upload to final digitized product management.
+1. **Upload** (`PlanosPage.png` - initial state)
+2. **Process & Edit** (`PlanosPage-delimitados.png` - vector editing)
+3. **Visualize** (`PlanoDigitalPageNew1.png` - 3D view)
+4. **Manage** (`PlanoFinalizadoPage.png` - final management)
+
+The screenshots serve as both documentation and user guide, showing the system's capabilities from initial upload through final lot management and sales tracking.
 
 ## Getting Started
 
