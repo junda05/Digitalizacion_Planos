@@ -23,35 +23,27 @@ The Digital Plan Management System is a comprehensive web application designed f
 
 ## Screenshots
 
-The system includes several key interfaces documented through screenshots in the `images` directory:
+The system provides a comprehensive user interface for plan management and digitization:
 
-### Main Application Views
+### Main Dashboard
+![Plans List Page](images/PlanosListPage.png)
+*Main dashboard showing all digitized plans with grid and list view options (PlanosListPage component)*
 
-- **`PlanosListPage.png`**: Main dashboard showing all digitized plans in both grid and list view formats (component: `PlanosListPage`)
-  - Features plan thumbnails, creation dates, lot statistics
-  - Toggle between grid and list views
-  - Quick access buttons for viewing and editing plans
-  
-- **`PlanosPage-delimitados.png`**: Interactive vector drawing interface showing the digitization process (component: `PlanosPage`)
-  - Displays the uploaded plan image with vector boundaries drawn over it
-  - Shows the drawing tools panel for creating borders and sublots
-  - Demonstrates the vector editing capabilities with precise vertex manipulation
+### Interactive Plan Editor
+![Plan Editor with Vectors](images/PlanosPage-delimitados.png)
+*Interactive vector drawing interface for defining plan boundaries and lots (PlanosPage component)*
 
-- **`PlanoDigitalPageNew1.png`**: 3D visualization of digitized plans with interactive lot management (component: `PlanoDigitalPageNew`)
-  - Shows elevated lot rendering with 3D effects and pastel colors
-  - Interactive hover effects revealing lot information
-  - Side panel for editing lot properties (price, status, area, description)
-  - Demonstrates the final digitized product without background images
+### 3D Plan Visualization
+![Digital Plan 3D View](images/PlanoDigitalPageNew1.png)
+*3D visualization of digitized plans with interactive lot management and hover effects (PlanoDigitalPageNew component)*
 
-- **`PlanoFinalizadoPage.png`**: Comprehensive plan overview with detailed statistics and management (component: `PlanoFinalizadoPage`)
-  - Statistical dashboard with lot counts by status
-  - Detailed lot information table with editing capabilities
-  - Export and management options
-  - Complete lot lifecycle management interface
+### Plan Management Dashboard
+![Finalized Plan Management](images/PlanoFinalizadoPage.png)
+*Comprehensive plan overview with detailed statistics and lot management (PlanoFinalizadoPage component)*
 
-### Key Interface Features Demonstrated
+### Key Interface Features
 
-The screenshots showcase the complete workflow:
+Each screenshot demonstrates core functionality:
 
 1. **Plan Upload & Processing**: 
    - Drag-and-drop interface for image/PDF upload
@@ -76,26 +68,7 @@ The screenshots showcase the complete workflow:
    - Status management workflow
    - Export capabilities for various formats
 
-### Technical Implementation Screenshots
-
-The images demonstrate several advanced features:
-
-- **Responsive Design**: Mobile-friendly layouts across all components
-- **Modern UI Components**: Tailwind CSS styling with gradient backgrounds
-- **Interactive Elements**: Hover states, transitions, and smooth animations
-- **Data Visualization**: Color-coded status indicators and statistical displays
-- **Canvas Integration**: HTML5 Canvas for vector manipulation and rendering
-
-### User Workflow Documentation
-
-Each screenshot represents a stage in the complete digitization workflow:
-
-1. **Upload** (`PlanosPage.png` - initial state)
-2. **Process & Edit** (`PlanosPage-delimitados.png` - vector editing)
-3. **Visualize** (`PlanoDigitalPageNew1.png` - 3D view)
-4. **Manage** (`PlanoFinalizadoPage.png` - final management)
-
-The screenshots serve as both documentation and user guide, showing the system's capabilities from initial upload through final lot management and sales tracking.
+The interface showcases modern UI components built with React and Tailwind CSS, featuring responsive design, smooth animations, and intuitive user interactions across all device sizes.
 
 ## Getting Started
 
@@ -266,6 +239,33 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 # Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+```
+
+## Usage
+
+1. **Upload a Plan:** Go to `/plano`, upload an image or PDF, and wait for processing.
+2. **Edit Vectors:** Draw or adjust plan boundaries and lots as needed.
+3. **Manage Lots:** Click on lots to edit their properties, assign status, area, and price.
+4. **View Statistics:** Access the list of plans and see statistics for each.
+5. **Export:** Use the export feature to download the digitized plan.
+
+## Troubleshooting
+
+- **API Connection Issues:** Verify the backend URL in `.env` and ensure the backend server is running.
+- **File Upload Errors:** Check that uploaded files are within size limits and supported formats (PNG, JPG, PDF).
+- **Vector Processing Issues:** Ensure the backend image processing services are properly configured.
+- **CORS Errors:** Configure your backend to allow requests from the frontend domain.
+
+## Customization
+
+- **Styling:** Tailwind CSS is used for styling. Adjust `tailwind.config.js` as needed.
+- **Localization:** The UI is in Spanish by default. Update text in React components for other languages.
+
+## Contact
+
+For support or inquiries, please contact the project maintainer.
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 ```
