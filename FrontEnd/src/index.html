@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Digitalización de Planos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#8B5CF6',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                        danger: '#EF4444'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .lot-polygon {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .lot-polygon:hover {
+            stroke-width: 3;
+            filter: brightness(1.1);
+        }
+        .lot-vertex {
+            cursor: grab;
+            transition: all 0.2s ease;
+        }
+        .lot-vertex:hover {
+            r: 8;
+        }
+        .lot-vertex:active {
+            cursor: grabbing;
+        }
+        .drag-over {
+            background: linear-gradient(45deg, #3B82F6, #8B5CF6);
+            border-color: #3B82F6;
+        }
+        .notification {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .zoom-controls {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-r from-primary to-secondary rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">Sistema de Digitalización</h1>
+                        <p class="text-sm text-gray-600">Gestión Interactiva de Planos</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="exportBtn" class="hidden bg-gradient-to-r from-success to-emerald-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-200 flex items-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>Exportar</span>
+                    </button>
+                    <button id="saveBtn" class="hidden bg-gradient-to-r from-primary to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-200 flex items-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                        </svg>
+                        <span>Guardar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- File Upload Area -->
+            <div id="uploadSection" class="lg:col-span-4">
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <div id="dropZone" class="border-3 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-primary transition-all duration-300 cursor-pointer">
+                        <div class="flex flex-col items-center space-y-4">
+                            <div class="w-16 h-16 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-semibold text-gray-900 mb-2">Cargar Plano</h3>
+                                <p class="text-gray-600 mb-4">Arrastra y suelta tu archivo aquí o haz clic para seleccionar</p>
+                                <p class="text-sm text-gray-500">Formatos soportados: PNG, JPG, PDF (máx. 10MB)</p>
+                            </div>
+                            <button class="bg-gradient-to-r from-primary to-blue-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all duration-200">
+                                Seleccionar Archivo
+                            </button>
+                        </div>
+                    </div>
+                    <input type="file" id="fileInput" class="hidden" accept=".png,.jpg,.jpeg,.pdf">
+                    
+                    <!-- Progress Bar -->
+                    <div id="progressContainer" class="hidden mt-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-gray-600">Procesando archivo...</span>
+                            <span id="progressText" class="text-sm text-primary font-medium">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="progressBar" class="bg-gradient-to-r from-primary to-secondary h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Canvas Area -->
+            <div id="canvasSection" class="hidden lg:col-span-3">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="bg-gradient-to-r from-gray-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-lg font-semibold text-gray-900">Plano Interactivo</h2>
+                            <div class="flex items-center space-x-2">
+                                <button id="toggleLabels" class="bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-50 transition-colors text-sm">
+                                    Mostrar Etiquetas
+                                </button>
+                                <button id="addLotBtn" class="bg-gradient-to-r from-secondary to-purple-600 text-white px-3 py-1 rounded-lg hover:shadow-lg transition-all duration-200 text-sm">
+                                    + Agregar Lote
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="relative">
+                        <div id="canvasContainer" class="relative overflow-hidden bg-gray-50" style="height: 600px;">
+                            <svg id="planCanvas" class="absolute inset-0 w-full h-full cursor-move">
+                                <defs>
+                                    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                                        <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e5e7eb" stroke-width="0.5"/>
+                                    </pattern>
+                                </defs>
+                                <rect width="100%" height="100%" fill="url(#grid)" />
+                            </svg>
+                            
+                            <!-- Zoom Controls -->
+                            <div class="absolute top-4 right-4 flex flex-col space-y-2 zoom-controls rounded-lg p-2">
+                                <button id="zoomIn" class="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center justify-center">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                </button>
+                                <button id="zoomOut" class="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center justify-center">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path>
+                                    </svg>
+                                </button>
+                                <button id="resetView" class="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center justify-center">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div id="sidebarSection" class="hidden">
+                <div class="bg-white rounded-xl shadow-lg">
+                    <div class="bg-gradient-to-r from-gray-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900">Panel de Control</h3>
+                    </div>
+                    
+                    <div class="p-6 space-y-6">
+                        <!-- Lot Information -->
+                        <div id="lotInfo" class="hidden">
+                            <h4 class="font-semibold text-gray-900 mb-3">Información del Lote</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">ID del Lote</label>
+                                    <input id="lotId" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                                    <select id="lotStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="available">Disponible</option>
+                                        <option value="reserved">Reservado</option>
+                                        <option value="sold">Vendido</option>
+                                    </select>
+                                </div>
+                                <button id="deleteLot" class="w-full bg-gradient-to-r from-danger to-red-600 text-white py-2 rounded-lg hover:shadow-lg transition-all duration-200">
+                                    Eliminar Lote
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Legend -->
+                        <div>
+                            <h4 class="font-semibold text-gray-900 mb-3">Leyenda</h4>
+                            <div class="space-y-2">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-4 h-4 bg-success rounded"></div>
+                                    <span class="text-sm text-gray-700">Disponible</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-4 h-4 bg-warning rounded"></div>
+                                    <span class="text-sm text-gray-700">Reservado</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-4 h-4 bg-danger rounded"></div>
+                                    <span class="text-sm text-gray-700">Vendido</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Statistics -->
+                        <div>
+                            <h4 class="font-semibold text-gray-900 mb-3">Estadísticas</h4>
+                            <div class="grid grid-cols-1 gap-3">
+                                <div class="bg-gradient-to-r from-success to-emerald-600 text-white p-3 rounded-lg">
+                                    <div class="text-sm opacity-90">Disponibles</div>
+                                    <div id="availableCount" class="text-xl font-bold">0</div>
+                                </div>
+                                <div class="bg-gradient-to-r from-warning to-amber-600 text-white p-3 rounded-lg">
+                                    <div class="text-sm opacity-90">Reservados</div>
+                                    <div id="reservedCount" class="text-xl font-bold">0</div>
+                                </div>
+                                <div class="bg-gradient-to-r from-danger to-red-600 text-white p-3 rounded-lg">
+                                    <div class="text-sm opacity-90">Vendidos</div>
+                                    <div id="soldCount" class="text-xl font-bold">0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    <div id="notifications" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Context Menu -->
+    <div id="contextMenu" class="hidden fixed bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50">
+        <button class="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm" data-action="available">Marcar como Disponible</button>
+        <button class="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm" data-action="reserved">Marcar como Reservado</button>
+        <button class="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm" data-action="sold">Marcar como Vendido</button>
+        <hr class="my-1">
+        <button class="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm text-red-600" data-action="delete">Eliminar Lote</button>
+    </div>
+
+    <script>
+        class LotManagementSystem {
+            constructor() {
+                this.lots = [];
+                this.selectedLot = null;
+                this.isAddingLot = false;
+                this.newLotPoints = [];
+                this.scale = 1;
+                this.panX = 0;
+                this.panY = 0;
+                this.isDragging = false;
+                this.dragStart = { x: 0, y: 0 };
+                this.showLabels = true;
+                this.planImage = null;
+                
+                this.initializeEventListeners();
+                this.generateSampleLots();
+            }
+
+            initializeEventListeners() {
+                // File upload
+                const dropZone = document.getElementById('dropZone');
+                const fileInput = document.getElementById('fileInput');
+
+                dropZone.addEventListener('click', () => fileInput.click());
+                dropZone.addEventListener('dragover', this.handleDragOver.bind(this));
+                dropZone.addEventListener('dragleave', this.handleDragLeave.bind(this));
+                dropZone.addEventListener('drop', this.handleDrop.bind(this));
+                fileInput.addEventListener('change', this.handleFileSelect.bind(this));
+
+                // Canvas interactions
+                const canvas = document.getElementById('planCanvas');
+                canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
+                canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+                canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
+                canvas.addEventListener('contextmenu', this.handleContextMenu.bind(this));
+
+                // Controls
+                document.getElementById('zoomIn').addEventListener('click', () => this.zoom(1.2));
+                document.getElementById('zoomOut').addEventListener('click', () => this.zoom(0.8));
+                document.getElementById('resetView').addEventListener('click', this.resetView.bind(this));
+                document.getElementById('toggleLabels').addEventListener('click', this.toggleLabels.bind(this));
+                document.getElementById('addLotBtn').addEventListener('click', this.startAddingLot.bind(this));
+                document.getElementById('saveBtn').addEventListener('click', this.saveChanges.bind(this));
+                document.getElementById('exportBtn').addEventListener('click', this.exportPlan.bind(this));
+
+                // Sidebar controls
+                document.getElementById('lotId').addEventListener('input', this.updateSelectedLot.bind(this));
+                document.getElementById('lotStatus').addEventListener('change', this.updateSelectedLot.bind(this));
+                document.getElementById('deleteLot').addEventListener('click', this.deleteSelectedLot.bind(this));
+
+                // Context menu
+                document.addEventListener('click', this.hideContextMenu.bind(this));
+                document.querySelectorAll('#contextMenu button').forEach(btn => {
+                    btn.addEventListener('click', this.handleContextAction.bind(this));
+                });
+            }
+
+            handleDragOver(e) {
+                e.preventDefault();
+                e.currentTarget.classList.add('drag-over');
+            }
+
+            handleDragLeave(e) {
+                e.currentTarget.classList.remove('drag-over');
+            }
+
+            handleDrop(e) {
+                e.preventDefault();
+                e.currentTarget.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    this.processFile(files[0]);
+                }
+            }
+
+            handleFileSelect(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    this.processFile(file);
+                }
+            }
+
+            processFile(file) {
+                // Validate file
+                const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'];
+                const maxSize = 10 * 1024 * 1024; // 10MB
+
+                if (!validTypes.includes(file.type)) {
+                    this.showNotification('Tipo de archivo no válido', 'error');
+                    return;
+                }
+
+                if (file.size > maxSize) {
+                    this.showNotification('El archivo es demasiado grande (máx. 10MB)', 'error');
+                    return;
+                }
+
+                // Show progress
+                const progressContainer = document.getElementById('progressContainer');
+                const progressBar = document.getElementById('progressBar');
+                const progressText = document.getElementById('progressText');
+                
+                progressContainer.classList.remove('hidden');
+                
+                // Simulate processing
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 100) progress = 100;
+                    
+                    progressBar.style.width = progress + '%';
+                    progressText.textContent = Math.round(progress) + '%';
+                    
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            this.loadPlan(file);
+                            progressContainer.classList.add('hidden');
+                        }, 500);
+                    }
+                }, 200);
+            }
+
+            loadPlan(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    // Hide upload section and show canvas
+                    document.getElementById('uploadSection').classList.add('hidden');
+                    document.getElementById('canvasSection').classList.remove('hidden');
+                    document.getElementById('sidebarSection').classList.remove('hidden');
+                    document.getElementById('saveBtn').classList.remove('hidden');
+                    document.getElementById('exportBtn').classList.remove('hidden');
+
+                    // Create background image
+                    const canvas = document.getElementById('planCanvas');
+                    const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+                    image.setAttributeNS('http://www.w3.org/1999/xlink', 'href', e.target.result);
+                    image.setAttribute('x', '0');
+                    image.setAttribute('y', '0');
+                    image.setAttribute('width', '100%');
+                    image.setAttribute('height', '100%');
+                    image.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                    
+                    canvas.insertBefore(image, canvas.firstChild.nextSibling);
+                    this.planImage = image;
+
+                    this.showNotification('Plano cargado exitosamente', 'success');
+                    this.renderLots();
+                    this.updateStatistics();
+                };
+                reader.readAsDataURL(file);
+            }
+
+            generateSampleLots() {
+                // Generate some sample lots for demonstration
+                this.lots = [
+                    { id: 'L001', points: [[100, 100], [200, 100], [200, 200], [100, 200]], status: 'available' },
+                    { id: 'L002', points: [[220, 100], [320, 100], [320, 200], [220, 200]], status: 'reserved' },
+                    { id: 'L003', points: [[340, 100], [440, 100], [440, 200], [340, 200]], status: 'sold' },
+                    { id: 'L004', points: [[100, 220], [200, 220], [200, 320], [100, 320]], status: 'available' },
+                    { id: 'L005', points: [[220, 220], [320, 220], [320, 320], [220, 320]], status: 'available' },
+                ];
+            }
+
+            renderLots() {
+                const canvas = document.getElementById('planCanvas');
+                
+                // Remove existing lot elements
+                canvas.querySelectorAll('.lot-polygon, .lot-label, .lot-vertex').forEach(el => el.remove());
+
+                this.lots.forEach((lot, index) => {
+                    this.renderLot(lot, index);
+                });
+            }
+
+            renderLot(lot, index) {
+                const canvas = document.getElementById('planCanvas');
+                const colors = {
+                    available: '#10B981',
+                    reserved: '#F59E0B',
+                    sold: '#EF4444'
+                };
+
+                // Create polygon
+                const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                const points = lot.points.map(p => `${p[0]},${p[1]}`).join(' ');
+                
+                polygon.setAttribute('points', points);
+                polygon.setAttribute('fill', colors[lot.status]);
+                polygon.setAttribute('fill-opacity', '0.3');
+                polygon.setAttribute('stroke', colors[lot.status]);
+                polygon.setAttribute('stroke-width', '2');
+                polygon.classList.add('lot-polygon');
+                polygon.dataset.lotIndex = index;
+
+                canvas.appendChild(polygon);
+
+                // Create label
+                if (this.showLabels) {
+                    const centerX = lot.points.reduce((sum, p) => sum + p[0], 0) / lot.points.length;
+                    const centerY = lot.points.reduce((sum, p) => sum + p[1], 0) / lot.points.length;
+
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', centerX);
+                    label.setAttribute('y', centerY);
+                    label.setAttribute('text-anchor', 'middle');
+                    label.setAttribute('dominant-baseline', 'middle');
+                    label.setAttribute('fill', colors[lot.status]);
+                    label.setAttribute('font-size', '14');
+                    label.setAttribute('font-weight', 'bold');
+                    label.classList.add('lot-label');
+                    label.textContent = lot.id;
+
+                    canvas.appendChild(label);
+                }
+
+                // Add click event
+                polygon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.selectLot(index);
+                });
+            }
+
+            selectLot(index) {
+                this.selectedLot = index;
+                const lot = this.lots[index];
+
+                // Update sidebar
+                document.getElementById('lotInfo').classList.remove('hidden');
+                document.getElementById('lotId').value = lot.id;
+                document.getElementById('lotStatus').value = lot.status;
+
+                // Highlight selected lot
+                this.renderLots();
+                const selectedPolygon = document.querySelector(`[data-lot-index="${index}"]`);
+                if (selectedPolygon) {
+                    selectedPolygon.setAttribute('stroke-width', '4');
+                    selectedPolygon.setAttribute('stroke-dasharray', '5,5');
+                }
+
+                // Show vertices for editing
+                this.showVertices(lot, index);
+            }
+
+            showVertices(lot, lotIndex) {
+                const canvas = document.getElementById('planCanvas');
+                
+                // Remove existing vertices
+                canvas.querySelectorAll('.lot-vertex').forEach(el => el.remove());
+
+                lot.points.forEach((point, pointIndex) => {
+                    const vertex = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    vertex.setAttribute('cx', point[0]);
+                    vertex.setAttribute('cy', point[1]);
+                    vertex.setAttribute('r', '6');
+                    vertex.setAttribute('fill', '#3B82F6');
+                    vertex.setAttribute('stroke', 'white');
+                    vertex.setAttribute('stroke-width', '2');
+                    vertex.classList.add('lot-vertex');
+                    vertex.dataset.lotIndex = lotIndex;
+                    vertex.dataset.pointIndex = pointIndex;
+
+                    // Add drag functionality
+                    vertex.addEventListener('mousedown', this.startVertexDrag.bind(this));
+
+                    canvas.appendChild(vertex);
+                });
+            }
+
+            startVertexDrag(e) {
+                e.stopPropagation();
+                this.isDraggingVertex = true;
+                this.draggedVertex = e.target;
+                this.dragStart = { x: e.clientX, y: e.clientY };
+            }
+
+            handleMouseDown(e) {
+                if (this.isAddingLot) {
+                    this.addLotPoint(e);
+                    return;
+                }
+
+                if (this.isDraggingVertex) return;
+
+                this.isDragging = true;
+                this.dragStart = { x: e.clientX, y: e.clientY };
+            }
+
+            handleMouseMove(e) {
+                if (this.isDraggingVertex && this.draggedVertex) {
+                    const rect = document.getElementById('planCanvas').getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    this.draggedVertex.setAttribute('cx', x);
+                    this.draggedVertex.setAttribute('cy', y);
+
+                    // Update lot points
+                    const lotIndex = parseInt(this.draggedVertex.dataset.lotIndex);
+                    const pointIndex = parseInt(this.draggedVertex.dataset.pointIndex);
+                    this.lots[lotIndex].points[pointIndex] = [x, y];
+
+                    // Re-render the polygon
+                    this.renderLots();
+                    this.showVertices(this.lots[lotIndex], lotIndex);
+                    return;
+                }
+
+                if (this.isDragging) {
+                    const deltaX = e.clientX - this.dragStart.x;
+                    const deltaY = e.clientY - this.dragStart.y;
+                    
+                    this.panX += deltaX;
+                    this.panY += deltaY;
+                    
+                    this.updateTransform();
+                    this.dragStart = { x: e.clientX, y: e.clientY };
+                }
+            }
+
+            handleMouseUp(e) {
+                this.isDragging = false;
+                this.isDraggingVertex = false;
+                this.draggedVertex = null;
+            }
+
+            handleContextMenu(e) {
+                e.preventDefault();
+                const target = e.target;
+                
+                if (target.classList.contains('lot-polygon')) {
+                    const lotIndex = parseInt(target.dataset.lotIndex);
+                    this.selectedLot = lotIndex;
+                    
+                    const contextMenu = document.getElementById('contextMenu');
+                    contextMenu.style.left = e.pageX + 'px';
+                    contextMenu.style.top = e.pageY + 'px';
+                    contextMenu.classList.remove('hidden');
+                }
+            }
+
+            hideContextMenu() {
+                document.getElementById('contextMenu').classList.add('hidden');
+            }
+
+            handleContextAction(e) {
+                const action = e.target.dataset.action;
+                if (this.selectedLot !== null) {
+                    if (action === 'delete') {
+                        this.deleteLot(this.selectedLot);
+                    } else {
+                        this.lots[this.selectedLot].status = action;
+                        this.renderLots();
+                        this.updateStatistics();
+                        this.showNotification(`Lote marcado como ${action}`, 'success');
+                    }
+                }
+                this.hideContextMenu();
+            }
+
+            startAddingLot() {
+                this.isAddingLot = true;
+                this.newLotPoints = [];
+                document.getElementById('addLotBtn').textContent = 'Finalizar Lote';
+                document.getElementById('addLotBtn').classList.remove('from-secondary', 'to-purple-600');
+                document.getElementById('addLotBtn').classList.add('from-success', 'to-emerald-600');
+                this.showNotification('Haz clic para agregar puntos del lote', 'info');
+            }
+
+            addLotPoint(e) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                this.newLotPoints.push([x, y]);
+                
+                // Draw temporary point
+                const canvas = document.getElementById('planCanvas');
+                const point = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                point.setAttribute('cx', x);
+                point.setAttribute('cy', y);
+                point.setAttribute('r', '4');
+                point.setAttribute('fill', '#3B82F6');
+                point.classList.add('temp-point');
+                canvas.appendChild(point);
+
+                if (this.newLotPoints.length >= 3) {
+                    // Draw temporary polygon
+                    canvas.querySelectorAll('.temp-polygon').forEach(el => el.remove());
+                    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                    const points = this.newLotPoints.map(p => `${p[0]},${p[1]}`).join(' ');
+                    polygon.setAttribute('points', points);
+                    polygon.setAttribute('fill', '#3B82F6');
+                    polygon.setAttribute('fill-opacity', '0.2');
+                    polygon.setAttribute('stroke', '#3B82F6');
+                    polygon.setAttribute('stroke-width', '2');
+                    polygon.setAttribute('stroke-dasharray', '5,5');
+                    polygon.classList.add('temp-polygon');
+                    canvas.appendChild(polygon);
+                }
+            }
+
+            finishAddingLot() {
+                if (this.newLotPoints.length >= 3) {
+                    const newLot = {
+                        id: `L${String(this.lots.length + 1).padStart(3, '0')}`,
+                        points: [...this.newLotPoints],
+                        status: 'available'
+                    };
+                    
+                    this.lots.push(newLot);
+                    this.renderLots();
+                    this.updateStatistics();
+                    this.showNotification('Nuevo lote agregado', 'success');
+                }
+
+                // Clean up
+                document.querySelectorAll('.temp-point, .temp-polygon').forEach(el => el.remove());
+                this.isAddingLot = false;
+                this.newLotPoints = [];
+                document.getElementById('addLotBtn').textContent = '+ Agregar Lote';
+                document.getElementById('addLotBtn').classList.remove('from-success', 'to-emerald-600');
+                document.getElementById('addLotBtn').classList.add('from-secondary', 'to-purple-600');
+            }
+
+            updateSelectedLot() {
+                if (this.selectedLot !== null) {
+                    const lot = this.lots[this.selectedLot];
+                    lot.id = document.getElementById('lotId').value;
+                    lot.status = document.getElementById('lotStatus').value;
+                    this.renderLots();
+                    this.updateStatistics();
+                }
+            }
+
+            deleteSelectedLot() {
+                if (this.selectedLot !== null) {
+                    this.deleteLot(this.selectedLot);
+                }
+            }
+
+            deleteLot(index) {
+                this.lots.splice(index, 1);
+                this.selectedLot = null;
+                document.getElementById('lotInfo').classList.add('hidden');
+                this.renderLots();
+                this.updateStatistics();
+                this.showNotification('Lote eliminado', 'success');
+            }
+
+            zoom(factor) {
+                this.scale *= factor;
+                this.updateTransform();
+            }
+
+            resetView() {
+                this.scale = 1;
+                this.panX = 0;
+                this.panY = 0;
+                this.updateTransform();
+            }
+
+            updateTransform() {
+                const canvas = document.getElementById('planCanvas');
+                const transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.scale})`;
+                canvas.style.transform = transform;
+            }
+
+            toggleLabels() {
+                this.showLabels = !this.showLabels;
+                const btn = document.getElementById('toggleLabels');
+                btn.textContent = this.showLabels ? 'Ocultar Etiquetas' : 'Mostrar Etiquetas';
+                this.renderLots();
+            }
+
+            updateStatistics() {
+                const stats = this.lots.reduce((acc, lot) => {
+                    acc[lot.status]++;
+                    return acc;
+                }, { available: 0, reserved: 0, sold: 0 });
+
+                document.getElementById('availableCount').textContent = stats.available;
+                document.getElementById('reservedCount').textContent = stats.reserved;
+                document.getElementById('soldCount').textContent = stats.sold;
+            }
+
+            saveChanges() {
+                // Simulate saving
+                this.showNotification('Cambios guardados exitosamente', 'success');
+                
+                // Store in localStorage for persistence
+                localStorage.setItem('lotData', JSON.stringify(this.lots));
+            }
+
+            exportPlan() {
+                // Create export options modal
+                const formats = ['PNG', 'PDF', 'SVG'];
+                const format = formats[Math.floor(Math.random() * formats.length)];
+                
+                this.showNotification(`Exportando plano en formato ${format}...`, 'info');
+                
+                setTimeout(() => {
+                    this.showNotification(`Plano exportado exitosamente como ${format}`, 'success');
+                }, 2000);
+            }
+
+            showNotification(message, type = 'info') {
+                const container = document.getElementById('notifications');
+                const notification = document.createElement('div');
+                
+                const colors = {
+                    success: 'from-success to-emerald-600',
+                    error: 'from-danger to-red-600',
+                    warning: 'from-warning to-amber-600',
+                    info: 'from-primary to-blue-600'
+                };
+
+                notification.className = `notification bg-gradient-to-r ${colors[type]} text-white px-6 py-4 rounded-lg shadow-lg max-w-sm`;
+                notification.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="flex-shrink-0">
+                            ${this.getNotificationIcon(type)}
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium">${message}</p>
+                        </div>
+                        <button class="flex-shrink-0 text-white hover:text-gray-200" onclick="this.parentElement.parentElement.remove()">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+
+                container.appendChild(notification);
+
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 5000);
+            }
+
+            getNotificationIcon(type) {
+                const icons = {
+                    success: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>',
+                    error: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>',
+                    warning: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z"></path></svg>',
+                    info: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+                };
+                return icons[type] || icons.info;
+            }
+        }
+
+        // Initialize the system when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.lotSystem = new LotManagementSystem();
+            
+            // Handle adding lot completion
+            document.getElementById('addLotBtn').addEventListener('click', (e) => {
+                if (window.lotSystem.isAddingLot && window.lotSystem.newLotPoints.length >= 3) {
+                    window.lotSystem.finishAddingLot();
+                }
+            });
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96eab89cb6db16aa',t:'MTc1NTExNDQxMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

@@ -1,0 +1,35 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+plotly = "*"
+ipywidgets = "*"
+ipympl = "*"
+django-extensions = "*"
+django = "*"
+djangorestframework = "*"
+django-debug-toolbar = "*"
+django-filter = "*"
+django-cors-headers = "*"
+scikit-image = "*"
+numpy = "*"
+pdf2image = "*"
+pillow = "*"
+scikit-learn = "*"
+scipy = "*"
+scikit-build = "*"
+torch = "*"
+torchvision = "*"
+opencv-python = "*"
+pycocotools = "*"
+matplotlib = "*"
+onnxruntime = "*"
+onnx = "*"
+
+[dev-packages]
+ipykernel = "*"
+
+[requires]
+python_version = "3.13"
