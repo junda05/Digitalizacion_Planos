@@ -37,9 +37,11 @@ The system provides a comprehensive user interface for plan management and digit
 ![Digital Plan 3D View](images/PlanoDigitalPageNew1.png)
 *3D visualization of digitized plans with interactive lot management and hover effects (PlanoDigitalPageNew component)*
 
-### Plan Management Dashboard
-![Finalized Plan Management](images/PlanoFinalizadoPage.png)
-*Comprehensive plan overview with detailed statistics and lot management (PlanoFinalizadoPage component)*
+### 3D Plan Visualization
+![Digital Plan 3D View](images/PlanoDigitalPageNew2.png)
+*3D visualization of digitized plans with interactive lot management and hover effects (PlanoDigitalPageNew component)*
+
+
 
 ### Key Interface Features
 
